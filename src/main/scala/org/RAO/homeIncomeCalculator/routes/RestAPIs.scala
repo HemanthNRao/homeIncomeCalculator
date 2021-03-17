@@ -8,7 +8,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.RAO.homeIncomeCalculator.DAL.HomeCQueryManager
-import org.RAO.homeIncomeCalculator.utils.Json
+import org.RAO.homeIncomeCalculator.utils.{ErrorConstants, Json}
 
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -20,53 +20,52 @@ import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
 
 
-trait RestAPIs {
+trait RestAPIs extends APIRoutes{
   implicit val system: ActorSystem
-  var dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+  var dateFormat = new SimpleDateFormat("dd-MM-yyyy")
   var date=dateFormat.format(new Date()).toString
   var timeFormat = new SimpleDateFormat("HH:mm:ss")
   var time=timeFormat.format(new Date()).toString
 
+
   val dataRoutes = (pathPrefix("homeCalc")) {
     (path("insert") & post & entity(as[Multipart.FormData])) {
       formData=>
-          {
-            val inputMapF=getFormDataToMap(formData)
-            onSuccess(inputMapF)
-            {
-              inputMap=>
-                val data=inputMap("data").toString
-                val dataConfig=Json.parse(data)
-                val amount=dataConfig.asMap("amount").asDouble
-                HomeCQueryManager.insertCredit(date,amount)
-                val bal=updateBalance(amount,"add")
-                complete(HttpEntity(ContentTypes.`application/json`,Json.Value(Map("balance"->bal,"amount" -> amount)).writeln))
+      {
+        val inputMapF=getFormDataToMap(formData)
+        onSuccess(inputMapF)
+        {
+          inputMap=>
+            validate(checkTodaysEntry,ErrorConstants.DATE_ALREADY_EXISTS) {
+              val amount = inputMap("amount").toString.toDouble
+              //check gien date is exist in database if so throw error saying todays income already inerted
+              HomeCQueryManager.insertCredit(date, amount)
+              val bal = updateBalance(amount, "add")
+              complete(HttpEntity(ContentTypes.`application/json`, Json.Value(Map("balance" -> bal, "amount" -> amount)).writeln))
             }
-          }
+        }
+      }
     } ~
-      (path("debit") & post &entity(as[Multipart.FormData])) {
-        formData =>
-            {
-              val inputMapF=getFormDataToMap(formData)
-              onSuccess(inputMapF)
-              {
-                inputMap =>
-                  val data=inputMap("data").toString
-                  val dataConfig=Json.parse(data)
-                  val amount=dataConfig.asMap("amount").asDouble
-                  val reason=dataConfig.asMap("reason").toString
-                  HomeCQueryManager.insertDebit(date,time,amount,reason)
-                  val bal=updateBalance(amount,"sub")
-                  complete(HttpEntity(ContentTypes.`application/json`,Json.Value(Map("balance"->bal,"reason"->reason,"amount" -> amount,"time"->time)).writeln))
-
-              }
-            }
-      } ~
-      path("balance") {
+    (path("debit") & post &entity(as[Multipart.FormData])) {
+      formData =>
+        {
+          val inputMapF=getFormDataToMap(formData)
+          onSuccess(inputMapF)
+          {
+            inputMap =>
+              val amount=inputMap("amount").toString.toDouble
+              val reason=inputMap("reason").toString
+              HomeCQueryManager.insertDebit(date,time,amount,reason)
+              val bal=updateBalance(amount,"sub")
+              complete(HttpEntity(ContentTypes.`application/json`,Json.Value(Map("balance"->bal,"reason"->reason,"amount" -> amount,"time"->time)).writeln))
+          }
+        }
+    } ~
+      (path("balance") & get){
         val bal=HomeCQueryManager.getBalance.getOrElse(0.0)
         complete(HttpEntity(ContentTypes.`application/json`,Json.Value(Map("balance"->bal)).writeln))
       } ~
-      path("balZero") {
+      (path("balZero") & post) {
         HomeCQueryManager.upDateBalZero
         complete(StatusCodes.OK)
       } ~
@@ -79,23 +78,23 @@ trait RestAPIs {
           val inputMapF=getFormDataToMap(formDate)
           onSuccess(inputMapF) {
             inputMap =>
-              val data = inputMap("data").toString
-              val dataConfig = Json.parse(data)
-              val fromDate = dataConfig.asMap("fromDate").toString
-              val toDate = dataConfig.asMap("toDate").toString
+//              val data = inputMap("data").toString
+//              val dataConfig = Json.parse(data)
+              val fromDate = inputMap("fromDate").toString
+              val toDate = inputMap("toDate").toString
               val res = HomeCQueryManager.getAllDebit(fromDate, toDate)
               complete(HttpEntity(ContentTypes.`application/json`, Json.Value(res).writeln))
           }
       } ~
-      (path("credits") &get &entity(as[Multipart.FormData])) {
+      (path("credits") & get &entity(as[Multipart.FormData])) {
         formDate=>
           val inputMapF=getFormDataToMap(formDate)
           onSuccess(inputMapF) {
             inputMap =>
-              val data = inputMap("data").toString
-              val dataConfig = Json.parse(data)
-              val fromDate = dataConfig.asMap("fromDate").toString
-              val toDate = dataConfig.asMap("toDate").toString
+//              val data = inputMap("data").toString
+//              val dataConfig = Json.parse(data)
+              val fromDate = inputMap("fromDate").toString
+              val toDate = inputMap("toDate").toString
               val res = HomeCQueryManager.getAllCredit(fromDate, toDate)
               complete(HttpEntity(ContentTypes.`application/json`, Json.Value(res).writeln))
           }
@@ -106,9 +105,9 @@ trait RestAPIs {
           val inputMapF=getFormDataToMap(formData)
           onSuccess(inputMapF){
             inputMap=>
-              val data=inputMap("data").toString
-              val dataConfig=Json.parse(data)
-              val amount=dataConfig.asMap("amount").asDouble
+//              val data=inputMap("data").toString
+//              val dataConfig=Json.parse(data)
+              val amount=inputMap("amount").toString.toDouble
               HomeCQueryManager.updateBalance(amount)
               complete(HttpEntity(ContentTypes.`application/json`,Json.Value(Map("bal"->amount)).writeln))
           }
@@ -154,4 +153,12 @@ trait RestAPIs {
     HomeCQueryManager.updateBalance(bal)
     bal
   }
+
+  def checkTodaysEntry=
+    {
+      val res=HomeCQueryManager.checkEntry(date).getOrElse(0)
+      val exists=if(res==1) false else true
+      println(res,exists)
+      exists
+    }
 }

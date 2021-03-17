@@ -35,5 +35,8 @@ object HomeCQueryManager {
   def upDateBalZero={
     db.queyWithNoResult("update BAL set balance=0",Array())
   }
+  def checkEntry(date:String)={
+    db.queryWithSingleResult("select count(date) as res from credit where date=?",Array(date))
+  }
 
 }
