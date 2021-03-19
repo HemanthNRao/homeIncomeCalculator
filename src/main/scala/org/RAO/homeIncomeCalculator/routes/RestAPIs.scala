@@ -144,7 +144,9 @@ trait RestAPIs extends APIRoutes{
       .map(_.toMap)
   }
 
+
   def updateBalance(amount:Double,flag:String)= {
+    //TODO: check balance is not updating properly
     var bal=HomeCQueryManager.getBalance.getOrElse(0.0)
     if(flag=="add")
       bal=bal + amount
@@ -158,7 +160,6 @@ trait RestAPIs extends APIRoutes{
     {
       val res=HomeCQueryManager.checkEntry(date).getOrElse(0)
       val exists=if(res==1) false else true
-      println(res,exists)
       exists
     }
 }
