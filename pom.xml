@@ -117,6 +117,31 @@
                     </execution>
                 </executions>
             </plugin>
+<!--"scala-maven-plugin" helps to create scala class files-->
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <version>4.3.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compile</goal>
+                            <goal>testCompile</goal>
+                            <goal>add-source</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <scalaCompatVersion>2.12.12</scalaCompatVersion>
+                    <scalaVersion>2.12.10</scalaVersion>
+                    <args>
+                        <arg>-deprecation</arg>
+                        <arg>-dependencyfile</arg>
+                        <arg>${project.build.directory}/.scala_dependencies</arg>
+                    </args>
+                </configuration>
+            </plugin>
             <!-- We want to copy the output files to a final folder. -->
 <!--            <plugin>-->
 <!--                <artifactId>maven-resources-plugin</artifactId>-->
