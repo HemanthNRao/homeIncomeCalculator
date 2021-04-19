@@ -53,6 +53,7 @@ trait DBBackend {
         {
           val myst=conn.prepareStatement(query)
           params.zipWithIndex.foreach{ case(value,i)=>addParam(myst,i+1,value)}
+          println(myst)
           myst
         }
       );

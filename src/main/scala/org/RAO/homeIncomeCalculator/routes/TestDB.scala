@@ -1,7 +1,7 @@
 package org.RAO.homeIncomeCalculator.routes
 
+import org.RAO.homeIncomeCalculator.ConfigManager
 import org.RAO.homeIncomeCalculator.DAL.{HomeCQueryManager, SqliteBackend}
-import org.RAO.homeIncomeCalculator.utils.ConfigManager
 
 import java.sql.DriverManager
 import java.text.SimpleDateFormat

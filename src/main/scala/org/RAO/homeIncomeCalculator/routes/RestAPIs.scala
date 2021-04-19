@@ -22,8 +22,8 @@ import scala.language.postfixOps
 
 trait RestAPIs extends APIRoutes{
   implicit val system: ActorSystem
-  var dateFormat = new SimpleDateFormat("dd-MM-yyyy")
-  var date=dateFormat.format(new Date()).toString
+  var dateFormat = new SimpleDateFormat("YYYY:MM:dd")
+  var date=dateFormat.format(new Date())
   var timeFormat = new SimpleDateFormat("HH:mm:ss")
   var time=timeFormat.format(new Date()).toString
 
@@ -74,29 +74,32 @@ trait RestAPIs extends APIRoutes{
         complete(HttpEntity(ContentTypes.`application/json`,Json.Value(res).writeln))
       } ~
       (path("expenses") &get & entity(as[Multipart.FormData])){
-        formDate=>
-          val inputMapF=getFormDataToMap(formDate)
+        formData=>
+          val inputMapF=getFormDataToMap(formData)
           onSuccess(inputMapF) {
             inputMap =>
 //              val data = inputMap("data").toString
 //              val dataConfig = Json.parse(data)
               val fromDate = inputMap("fromDate").toString
               val toDate = inputMap("toDate").toString
+              println(formData)
+              println(toDate)
               val res = HomeCQueryManager.getAllDebit(fromDate, toDate)
               complete(HttpEntity(ContentTypes.`application/json`, Json.Value(res).writeln))
           }
       } ~
       (path("credits") & get &entity(as[Multipart.FormData])) {
-        formDate=>
-          val inputMapF=getFormDataToMap(formDate)
+        formData=>
+          val inputMapF=getFormDataToMap(formData)
           onSuccess(inputMapF) {
-            inputMap =>
-//              val data = inputMap("data").toString
-//              val dataConfig = Json.parse(data)
+            inputMap => {
               val fromDate = inputMap("fromDate").toString
               val toDate = inputMap("toDate").toString
+              println("from ", fromDate)
+              println("TO ", toDate)
               val res = HomeCQueryManager.getAllCredit(fromDate, toDate)
               complete(HttpEntity(ContentTypes.`application/json`, Json.Value(res).writeln))
+            }
           }
       } ~
       (path("updateBal") & post & entity(as[Multipart.FormData]))
@@ -159,7 +162,6 @@ trait RestAPIs extends APIRoutes{
   def checkTodaysEntry=
     {
       val res=HomeCQueryManager.checkEntry(date).getOrElse(0)
-      val exists=if(res==1) false else true
-      exists
+      if(res==1) false else true
     }
 }

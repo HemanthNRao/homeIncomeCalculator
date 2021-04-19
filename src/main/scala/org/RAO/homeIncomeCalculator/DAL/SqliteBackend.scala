@@ -1,6 +1,6 @@
 package org.RAO.homeIncomeCalculator.DAL
 
-import org.RAO.homeIncomeCalculator.utils.ConfigManager
+import org.RAO.homeIncomeCalculator.ConfigManager
 
 import java.sql.{Connection, DriverManager}
 
@@ -30,6 +30,7 @@ class SqliteBackend extends DBBackend{
     val BAL = "CREATE TABLE if not exists BAL(balance double not null);"
     val credit = "CREATE TABLE if not exists credit(DATE date primary key,amount double NOT NULL);"
     val debit = "CREATE TABLE if not exists debit(Date date not null,time time,amount double,reason varchar2(4000));"
+    val insertFirstBal = "INSERT INTO BAL values(0);"
 
 //    queyWithNoResult(dropBAL,Array())
 //    queyWithNoResult(dropCredit,Array())
@@ -37,6 +38,7 @@ class SqliteBackend extends DBBackend{
     queyWithNoResult(BAL,Array())
     queyWithNoResult(credit,Array())
     queyWithNoResult(debit,Array())
+    queyWithNoResult(insertFirstBal,Array())
   }
   override def getConnection: Connection = SqliteBackend.dbConn
 }
