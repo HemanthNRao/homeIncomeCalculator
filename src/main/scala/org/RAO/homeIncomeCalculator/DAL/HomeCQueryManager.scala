@@ -25,15 +25,18 @@ object HomeCQueryManager {
   }
 
   def getAllDebit(fromDate:String,toDate:String)={
-    db.queryWithResult("SELECT * from debit where Date BETWEEN ? and ?",Array(fromDate,toDate))
+    db.queryWithResult("SELECT * FROM debit WHERE DATE BETWEEN ? and ?",Array(fromDate,toDate))
   }
 
   def getAllCredit(fromDate:String,toDate:String)={
-    db.queryWithResult("SELECT * from credit where Date BETWEEN ? and ?",Array(fromDate,toDate))
+    db.queryWithResult("SELECT * FROM credit WHERE DATE BETWEEN ? and ?",Array(fromDate,toDate))
   }
 
   def upDateBalZero={
     db.queyWithNoResult("update BAL set balance=0",Array())
+  }
+  def checkEntry(date:String)={
+    db.queryWithSingleResult("select count(date) as res from credit where date=?",Array(date))
   }
 
 }
