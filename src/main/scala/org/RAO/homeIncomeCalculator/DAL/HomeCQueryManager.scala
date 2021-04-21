@@ -1,9 +1,8 @@
 package org.RAO.homeIncomeCalculator.DAL
 
-import akka.stream.scaladsl.Balance
 
-object HomeCQueryManager {
-  val db=new SqliteBackend
+object HomeCQueryManager extends QueryManager
+{
   def getBalance={
     db.queryWithSingleResult[Double]("select * from BAL",Array())
   }
@@ -29,7 +28,7 @@ object HomeCQueryManager {
   }
 
   def getAllCredit(fromDate:String,toDate:String)={
-    db.queryWithResult("SELECT * FROM credit WHERE DATE BETWEEN ? and ?",Array(fromDate,toDate))
+    db.queryWithResult("SELECT * FROM debit WHERE DATE BETWEEN ? and ?",Array(fromDate,toDate))
   }
 
   def upDateBalZero={

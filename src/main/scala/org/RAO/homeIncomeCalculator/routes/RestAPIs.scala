@@ -8,7 +8,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.RAO.homeIncomeCalculator.DAL.HomeCQueryManager
-import org.RAO.homeIncomeCalculator.utils.{ErrorConstants, Json}
+import org.RAO.homeIncomeCalculator.exceptions.MissingParams
+import org.RAO.homeIncomeCalculator.utils.{ErrorConstants, Json, Utils}
 
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -36,13 +37,18 @@ trait RestAPIs extends APIRoutes{
         onSuccess(inputMapF)
         {
           inputMap=>
-            validate(checkTodaysEntry,ErrorConstants.DATE_ALREADY_EXISTS) {
-              val amount = inputMap("amount").toString.toDouble
-              //check gien date is exist in database if so throw error saying todays income already inerted
-              HomeCQueryManager.insertCredit(date, amount)
-              val bal = updateBalance(amount, "add")
-              complete(HttpEntity(ContentTypes.`application/json`, Json.Value(Map("balance" -> bal, "amount" -> amount)).writeln))
+            val missingParam = Utils.required(inputMap, List("amount"))
+            if(missingParam.isEmpty) {
+              validate(checkTodaysEntry, ErrorConstants.DATE_ALREADY_EXISTS) {
+                val amount = inputMap("amount").toString.toDouble
+                //check gien date is exist in database if so throw error saying todays income already inerted
+                HomeCQueryManager.insertCredit(date, amount)
+                val bal = updateBalance(amount, "add")
+                complete(HttpEntity(ContentTypes.`application/json`, Json.Value(Map("balance" -> bal, "amount" -> amount)).writeln))
+              }
             }
+            else
+              throw new MissingParams(missingParam)
         }
       }
     } ~
@@ -53,11 +59,17 @@ trait RestAPIs extends APIRoutes{
           onSuccess(inputMapF)
           {
             inputMap =>
-              val amount=inputMap("amount").toString.toDouble
-              val reason=inputMap("reason").toString
-              HomeCQueryManager.insertDebit(date,time,amount,reason)
-              val bal=updateBalance(amount,"sub")
-              complete(HttpEntity(ContentTypes.`application/json`,Json.Value(Map("balance"->bal,"reason"->reason,"amount" -> amount,"time"->time)).writeln))
+              val missingParam = Utils.required(inputMap, List("amount"))
+              if(missingParam.isEmpty)
+              {
+                val amount = inputMap("amount").toString.toDouble
+                val reason = inputMap("reason").toString
+                HomeCQueryManager.insertDebit(date, time, amount, reason)
+                val bal = updateBalance(amount, "sub")
+                complete(HttpEntity(ContentTypes.`application/json`, Json.Value(Map("balance" -> bal, "reason" -> reason, "amount" -> amount, "time" -> time)).writeln))
+              }
+              else
+                throw new MissingParams(missingParam)
           }
         }
     } ~
@@ -108,11 +120,14 @@ trait RestAPIs extends APIRoutes{
           val inputMapF=getFormDataToMap(formData)
           onSuccess(inputMapF){
             inputMap=>
-//              val data=inputMap("data").toString
-//              val dataConfig=Json.parse(data)
-              val amount=inputMap("amount").toString.toDouble
-              HomeCQueryManager.updateBalance(amount)
-              complete(HttpEntity(ContentTypes.`application/json`,Json.Value(Map("bal"->amount)).writeln))
+              val missingParam = Utils.required(inputMap, List("amount"))
+              if(missingParam.isEmpty) {
+                val amount = inputMap("amount").toString.toDouble
+                HomeCQueryManager.updateBalance(amount)
+                complete(HttpEntity(ContentTypes.`application/json`, Json.Value(Map("bal" -> amount)).writeln))
+              }
+              else
+                throw new MissingParams(missingParam)
           }
       }
   }
