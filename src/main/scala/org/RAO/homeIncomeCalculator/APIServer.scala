@@ -7,6 +7,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import org.RAO.homeIncomeCalculator.routes.RestAPIs
 import org.RAO.homeIncomeCalculator.utils.Json
+import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 
 import java.lang.Thread.sleep
 import scala.util.{Failure, Success}
@@ -16,7 +17,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object APIServer extends App with RestAPIs {
   implicit val system = ActorSystem()
   ConfigManager.setConfig("local-config.conf")
-  val routes = (handleExceptions(serverExceptionHandler) &
+  /*val routes = (handleExceptions(serverExceptionHandler) &
     handleRejections(serverRejectionHandler) & decodeRequest & optionalHeaderValueByName("session")) {
     headerSession => {
       println("session: ",headerSession.getOrElse(""))
@@ -25,6 +26,12 @@ object APIServer extends App with RestAPIs {
       if (headerSession.getOrElse("") != res) complete("Unauthenticated")
       else dataRoutes
     }
+  }*/
+
+  val routes = (handleExceptions(serverExceptionHandler) &
+    handleRejections(serverRejectionHandler) &decodeRequest & cors())
+  {
+    dataRoutes
   }
   val bindingFuture = Http().bindAndHandle(routes, ConfigManager.get("http.interface"), ConfigManager.get("http.port").toInt)
 
@@ -42,7 +49,7 @@ object APIServer extends App with RestAPIs {
         case Failure(e) => None
       }
       println("entered else part")
-      sleep(5000)
+      sleep(500)
       println("res:", res)
       res
     }

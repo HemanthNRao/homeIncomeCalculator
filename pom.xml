@@ -77,6 +77,12 @@
             <version>10.1.11</version>
             <scope>test</scope>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/ch.megard/akka-http-cors_2.11 -->
+        <dependency>
+            <groupId>ch.megard</groupId>
+            <artifactId>akka-http-cors_2.12</artifactId>
+            <version>0.2.2</version>
+        </dependency>
 
     </dependencies>
     <build>

@@ -10,7 +10,6 @@ import akka.util.ByteString
 import org.RAO.homeIncomeCalculator.DAL.HomeCQueryManager
 import org.RAO.homeIncomeCalculator.exceptions.MissingParams
 import org.RAO.homeIncomeCalculator.utils.{ErrorConstants, Json, Utils}
-
 import java.text.SimpleDateFormat
 import java.util.Date
 import scala.collection.mutable
@@ -29,7 +28,7 @@ trait RestAPIs extends APIRoutes{
   var time=timeFormat.format(new Date()).toString
 
 
-  val dataRoutes = (pathPrefix("homeCalc")) {
+  val dataRoutes = (pathPrefix("homeCalc")  ) {
     (path("insert") & post & entity(as[Multipart.FormData])) {
       formData=>
       {
@@ -85,34 +84,19 @@ trait RestAPIs extends APIRoutes{
         val res=HomeCQueryManager.getOneDebit(date)
         complete(HttpEntity(ContentTypes.`application/json`,Json.Value(res).writeln))
       } ~
-      (path("expenses") &get & entity(as[Multipart.FormData])){
-        formData=>
-          val inputMapF=getFormDataToMap(formData)
-          onSuccess(inputMapF) {
-            inputMap =>
-//              val data = inputMap("data").toString
-//              val dataConfig = Json.parse(data)
-              val fromDate = inputMap("fromDate").toString
-              val toDate = inputMap("toDate").toString
-              println(formData)
+      (path("expenses" / Segment/ Segment) &get ){
+        (fromDate, toDate) =>{
+              println(fromDate)
               println(toDate)
-              val res = HomeCQueryManager.getAllDebit(fromDate, toDate)
+              val res = HomeCQueryManager.getAllDebit(dateFormater(fromDate), dateFormater(toDate))
               complete(HttpEntity(ContentTypes.`application/json`, Json.Value(res).writeln))
           }
       } ~
-      (path("credits") & get &entity(as[Multipart.FormData])) {
-        formData=>
-          val inputMapF=getFormDataToMap(formData)
-          onSuccess(inputMapF) {
-            inputMap => {
-              val fromDate = inputMap("fromDate").toString
-              val toDate = inputMap("toDate").toString
-              println("from ", fromDate)
-              println("TO ", toDate)
-              val res = HomeCQueryManager.getAllCredit(fromDate, toDate)
+      (path("credits" / Segment/ Segment ) & get) {
+        (fromDate, toDate) =>{
+              val res = HomeCQueryManager.getAllCredit(dateFormater(fromDate), dateFormater(toDate))
               complete(HttpEntity(ContentTypes.`application/json`, Json.Value(res).writeln))
             }
-          }
       } ~
       (path("updateBal") & post & entity(as[Multipart.FormData]))
       {
@@ -179,4 +163,9 @@ trait RestAPIs extends APIRoutes{
       val res=HomeCQueryManager.checkEntry(date).getOrElse(0)
       if(res==1) false else true
     }
+
+  def dateFormater(date:String)=
+  {
+    date.replaceAll("-",":")
+  }
 }
